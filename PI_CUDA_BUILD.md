@@ -277,7 +277,8 @@ Measured on this hardware, prompt "Count from 1 to 30, one number per line.", 60
 | `~/local/llama.cpp` CPU only | 4.68 | Baseline. Same 12B model, no GPU. |
 | This build, 25 GPU layers | **7.5** | 1.6× speedup. |
 | Ollama, 12B dense, full GPU | 11.22 | Ollama has more aggressive GPU offload + optimizations. |
-| Ollama, 26B MoE, full GPU | 16.11 | Only ~3-4B params active per token (8/128 experts). |
+| Ollama, 26B A4B QAT, 8k ctx | 10.5 | The preferred default for pi; higher quality, similar speed to 12B. |
+| Ollama, 26B MoE, 4k ctx (early test) | 16.11 | Only ~3-4B params active per token (8/128 experts). |
 
 The gap between us (7.5) and Ollama's 12B (11.2) is mostly because we
 have 23 layers on CPU. The model architecture bottleneck is
@@ -287,6 +288,12 @@ For non-interactive pi sessions (file edits, code review, etc.) 7.5
 tok/s is plenty — pi does tool calls, waits for a chunky response, and
 the wall-clock time is dominated by the model's reasoning, not its
 generation rate.
+
+The **26B A4B QAT** model in Ollama (`gemma4-26b-a4b-8k`) is the
+preferred default for pi despite being a "bigger" model: it has 25.8B
+total params but only ~3-4B active per token (8 of 128 MoE experts),
+so per-token cost is comparable to 12B-dense, while quality is higher.
+It also gets full GPU offload via Ollama, hitting ~10.5 tk/s.
 
 ---
 
@@ -301,17 +308,36 @@ When llama.cpp is running: **5.2 GB used, ~0.8 GB free**. Ollama needs
 Workflow:
 
 ```bash
-# Switch to Ollama
+# Switch to Ollama (26B A4B QAT, or any other ollama model)
 systemctl --user stop llama-cuda.service
-ollama run gemma4:26b
+pi --provider ollama --model gemma4-26b-a4b-8k
 
-# Switch back to llama.cpp
+# Switch back to llama.cpp (12B dense)
 systemctl --user start llama-cuda.service
+pi --provider llama.cpp --model gemma-4-12b-it-qat-q4_0
 ```
 
 If `pi` tries to talk to Ollama while llama-cuda is up, you'll get
 Ollama errors like `model requires more VRAM` or it'll just be slow.
 Stop llama-cuda first.
+
+### Other Ollama models on the box
+
+In addition to the 26B A4B QAT, the box has these Ollama models wired
+into `~/.pi/agent/models.json`:
+
+- `gemma4-12b-local` — same 12B Q4_0 model as the llama.cpp server,
+  but served by Ollama with full GPU offload (faster: 11.2 vs 7.5
+  tk/s). Useful for a quick A/B against the llama.cpp build.
+- `gemma4-26b-a4b-8k` — the 26B A4B QAT Q4_0, 8k context. The
+  preferred default.
+- `gemma4:e4b`, `phi4:latest`, `qwen2.5-coder:14b`, etc. — pulled
+  earlier, available for comparison.
+
+Each Ollama model can use its own per-model `num_ctx` (set in its
+Modelfile). The 26B A4B's default 4096 context was too small for pi's
+system prompt, so we created the `-8k` variant with `PARAMETER num_ctx
+8192` in its Modelfile.
 
 ---
 
@@ -320,6 +346,7 @@ Stop llama-cuda first.
 | Path | Purpose |
 |---|---|
 | `/home/joachim/lab/prj/llama.cpp/` | Upstream source (commit `0ef6f06`) |
+| `/home/joachim/lab/prj/llama.cpp/PI_CUDA_BUILD.md` | This file. Branch: `local/cuda-pi-setup` |
 | `/tmp/llama-cuda-build/` | Out-of-source build directory (1.4 GB) |
 | `/tmp/llama-cuda-build/bin/llama-server` | The compiled binary |
 | `/tmp/llama-cuda-build/bin/libggml-cuda.so` | CUDA backend (loaded at runtime) |
@@ -331,6 +358,9 @@ Stop llama-cuda first.
 | `/tmp/llama-cuda-server.log` | Manual launch log |
 | `/tmp/llama-cuda-server.pid` | Manual launch PID file |
 | `~/.pi/agent/models.json` | pi provider configuration |
+| `~/.pi/agent/settings.json` | pi default model + enabled model list |
+| `/tmp/gemma4-12b-local.Modelfile` | Modelfile that imports the 12B GGUF into Ollama as `gemma4-12b-local` |
+| `/tmp/gemma4-26b-8k.Modelfile` | Modelfile that derives `gemma4-26b-a4b-8k` from the 4096-ctx ollama model with `PARAMETER num_ctx 8192` |
 
 ---
 
