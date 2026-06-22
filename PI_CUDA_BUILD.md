@@ -85,7 +85,7 @@ on a 6 GB card. Push the context higher and the KV cache overflows VRAM.
 
 ### Source
 
-- Repo: `/home/joachim/src/llama.cpp` (commit `0ef6f06`, the same upstream
+- Repo: `/home/joachim/lab/prj/llama.cpp` (commit `0ef6f06`, the same upstream
   commit the stock `~/local/llama.cpp/` binary was built from).
 
 ### Build directory
@@ -100,7 +100,7 @@ on a 6 GB card. Push the context higher and the KV cache overflows VRAM.
 
 ```bash
 cd /tmp/llama-cuda-build
-cmake /home/joachim/src/llama.cpp \
+cmake /home/joachim/lab/prj/llama.cpp \
   -DCMAKE_BUILD_TYPE=Release \
   -DGGML_CUDA=ON \
   -DGGML_VULKAN=OFF \
@@ -319,7 +319,7 @@ Stop llama-cuda first.
 
 | Path | Purpose |
 |---|---|
-| `/home/joachim/src/llama.cpp/` | Upstream source (commit `0ef6f06`) |
+| `/home/joachim/lab/prj/llama.cpp/` | Upstream source (commit `0ef6f06`) |
 | `/tmp/llama-cuda-build/` | Out-of-source build directory (1.4 GB) |
 | `/tmp/llama-cuda-build/bin/llama-server` | The compiled binary |
 | `/tmp/llama-cuda-build/bin/libggml-cuda.so` | CUDA backend (loaded at runtime) |
@@ -348,7 +348,7 @@ systemctl --user stop llama-cuda.service
 rm -rf /tmp/llama-cuda-build
 mkdir -p /tmp/llama-cuda-build
 cd /tmp/llama-cuda-build
-cmake /home/joachim/src/llama.cpp <flags>     # see Build details above
+cmake /home/joachim/lab/prj/llama.cpp <flags>     # see Build details above
 cmake --build . --config Release -j$(nproc) --target llama-server
 
 # Restart the service
@@ -358,7 +358,7 @@ systemctl --user start llama-cuda.service
 
 Common reasons to rebuild:
 
-- `git pull` in `/home/joachim/src/llama.cpp/` brings a new commit.
+- `git pull` in `/home/joachim/lab/prj/llama.cpp/` brings a new commit.
 - A new GGUF model needs different kernels (e.g., a MoE).
 - You upgrade the CUDA toolkit and want to match.
 - `/tmp` was cleared and the build directory is gone.
