@@ -1,0 +1,24 @@
+./build/bin/llama-server \
+--models-preset /home/joachim/models/gguf/models.ini \
+--port 9931 \
+--models-max 1 \
+--flash-attn on \
+--parallel 1
+
+#--cache-ram 0 \
+--parallel 1 \
+-fa on \
+--no-reasoning-preserve \
+--load_mode none \
+-v
+
+
+
+
+#-m ~/models/gguf/Qwen3.6-35B-A3B-UD-Q4_K_S.gguf \
+#-ctk q4_0 -ctv q4_0 \
+#--no-mmap \
+#--ctx-size 16384 \
+#--reasoning-budget 2048 \
+#--ubatch-size 2048           
+

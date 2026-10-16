@@ -1,0 +1,10 @@
+./build/bin/llama-cli \
+-m ~/models/gguf/Qwen3.6-35B-A3B-UD-Q4_K_S.gguf \
+\
+--no-mmap --cache-ram 0 --parallel 1 --reasoning-budget 4096 \
+-fa on -ctk q8_0 -ctv q8_0 \
+-c 8192 \
+#-c 40960 \
+# Spec decoding removed 2026-XX-XX: see thc1006/qwen3.6-speculative-decoding-rtx3090
+# A3B MoE x consumer bandwidth is structurally a net loss (even with vocab-matched
+# Qwen3.5-0.8B on a 3090). The 0.6B draft also has vocab 151936 != target 248320.
